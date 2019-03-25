@@ -388,6 +388,7 @@
 		<include name="scenes/scene2d/**/*.java"/>
 
 	<!-- utils -->
+		<include name="utils/Align.java"/>
 		<include name="utils/Array.java"/> <!-- Emulated: Reflection -->
 		<include name="utils/ArrayMap.java"/> <!-- Emulated: Reflection -->
 		<exclude name="utils/AtomicQueue.java"/> <!-- Reason: No atomic support -->

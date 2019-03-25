@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright 2011 See AUTHORS file.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,8 +15,6 @@
  ******************************************************************************/
 
 package com.badlogic.gdx.scenes.scene2d;
-
-import static com.badlogic.gdx.utils.Align.*;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
@@ -35,6 +33,11 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.DelayedRemovalArray;
 import com.badlogic.gdx.utils.Pools;
 import com.badlogic.gdx.utils.reflect.ClassReflection;
+
+import static com.badlogic.gdx.utils.Align.bottom;
+import static com.badlogic.gdx.utils.Align.left;
+import static com.badlogic.gdx.utils.Align.right;
+import static com.badlogic.gdx.utils.Align.top;
 
 /** 2D scene graph node. An actor has a position, rectangular size, origin, scale, rotation, Z index, and color. The position
  * corresponds to the unrotated, unscaled bottom left corner of the actor. The position is relative to the actor's parent. The
@@ -79,9 +82,8 @@ public class Actor {
 	 * method returns.
 	 * <p>
 	 * The default implementation does nothing.
-	 * @param parentAlpha The parent alpha, to be multiplied with this actor's alpha, allowing the parent's alpha to affect all
-	 *           children. */
-	public void draw (Batch batch, float parentAlpha) {
+	 * @param a The parent alpha, to be multiplied with this actor's alpha, allowing the parent's alpha to affect all children. */
+	public void draw (Batch batch, float a) {
 	}
 
 	/** Updates the actor based on time. Typically this is called each frame by {@link Stage#act(float)}.
@@ -196,19 +198,18 @@ public class Actor {
 		return event.isCancelled();
 	}
 
-	/** Returns the deepest {@link #isVisible() visible} (and optionally, {@link #getTouchable() touchable}) actor that contains
-	 * the specified point, or null if no actor was hit. The point is specified in the actor's local coordinate system (0,0 is the
-	 * bottom left of the actor and width,height is the upper right).
+	/** Returns the deepest actor that contains the specified point and is {@link #getTouchable() touchable} and
+	 * {@link #isVisible() visible}, or null if no actor was hit. The point is specified in the actor's local coordinate system
+	 * (0,0 is the bottom left of the actor and width,height is the upper right).
 	 * <p>
 	 * This method is used to delegate touchDown, mouse, and enter/exit events. If this method returns null, those events will not
 	 * occur on this Actor.
 	 * <p>
-	 * The default implementation returns this actor if the point is within this actor's bounds and this actor is visible.
-	 * @param touchable If true, hit detection will respect the {@link #setTouchable(Touchable) touchability}.
+	 * The default implementation returns this actor if the point is within this actor's bounds.
+	 * @param touchable If true, the hit detection will respect the {@link #setTouchable(Touchable) touchability}.
 	 * @see Touchable */
 	public Actor hit (float x, float y, boolean touchable) {
 		if (touchable && this.touchable != Touchable.enabled) return null;
-		if (!isVisible()) return null;
 		return x >= 0 && x < width && y >= 0 && y < height ? this : null;
 	}
 
@@ -236,7 +237,7 @@ public class Actor {
 		return listeners.removeValue(listener, true);
 	}
 
-	public DelayedRemovalArray<EventListener> getListeners () {
+	public Array<EventListener> getListeners () {
 		return listeners;
 	}
 
@@ -253,7 +254,7 @@ public class Actor {
 		return captureListeners.removeValue(listener, true);
 	}
 
-	public DelayedRemovalArray<EventListener> getCaptureListeners () {
+	public Array<EventListener> getCaptureListeners () {
 		return captureListeners;
 	}
 
@@ -312,9 +313,9 @@ public class Actor {
 		if (actor == null) throw new IllegalArgumentException("actor cannot be null.");
 		Actor parent = this;
 		while (true) {
+			if (parent == null) return false;
 			if (parent == actor) return true;
 			parent = parent.parent;
-			if (parent == null) return false;
 		}
 	}
 
@@ -322,9 +323,9 @@ public class Actor {
 	public boolean isAscendantOf (Actor actor) {
 		if (actor == null) throw new IllegalArgumentException("actor cannot be null.");
 		while (true) {
+			if (actor == null) return false;
 			if (actor == this) return true;
 			actor = actor.parent;
-			if (actor == null) return false;
 		}
 	}
 
@@ -335,7 +336,7 @@ public class Actor {
 		Actor actor = this;
 		do {
 			if (ClassReflection.isInstance(type, actor)) return (T)actor;
-			actor = actor.parent;
+			actor = actor.getParent();
 		} while (actor != null);
 		return null;
 	}
@@ -351,9 +352,20 @@ public class Actor {
 	}
 
 	/** Called by the framework when an actor is added to or removed from a group.
-	 * @param parent May be null if the actor has been removed from the parent. */
-	protected void setParent (Group parent) {
-		this.parent = parent;
+	 * @param newParent May be null if the actor has been removed from the parent. */
+	protected void setParent(Group newParent) {
+		Group oldParent = this.parent;
+		this.parent = newParent;
+
+		if (newParent == null && oldParent != null && oldParent.getStage() != null) {
+			if (oldParent.isDescendantOf(oldParent.getStage().getRoot())) {
+				notifyHierarchyReachable(false);
+			}
+		} else if (newParent != null && oldParent == null && newParent.getStage() != null) {
+			if (newParent.isDescendantOf(newParent.getStage().getRoot())) {
+				notifyHierarchyReachable(true);
+			}
+		}
 	}
 
 	/** Returns true if input events are processed by this actor. */
@@ -379,13 +391,18 @@ public class Actor {
 		this.visible = visible;
 	}
 
-	/** Returns true if this actor and all ancestors are visible. */
-	public boolean ancestorsVisible () {
-		Actor actor = this;
+	/**
+	 * Check if all parent actors are visible.
+	 * @return true is all parents as well as the actor itself are visible.
+	 */
+	public boolean isHierarchyVisible(){
+		Actor currentActor = this;
 		do {
-			if (!actor.isVisible()) return false;
-			actor = actor.parent;
-		} while (actor != null);
+			if (!currentActor.isVisible()) {
+				return false;
+			}
+			currentActor = currentActor.getParent();
+		} while (currentActor != null);
 		return true;
 	}
 
@@ -732,19 +749,17 @@ public class Actor {
 
 	/** Sets the z-index of this actor. The z-index is the index into the parent's {@link Group#getChildren() children}, where a
 	 * lower index is below a higher index. Setting a z-index higher than the number of children will move the child to the front.
-	 * Setting a z-index less than zero is invalid.
-	 * @return true if the z-index changed. */
-	public boolean setZIndex (int index) {
+	 * Setting a z-index less than zero is invalid. */
+	public void setZIndex (int index) {
 		if (index < 0) throw new IllegalArgumentException("ZIndex cannot be < 0.");
 		Group parent = this.parent;
-		if (parent == null) return false;
+		if (parent == null) return;
 		Array<Actor> children = parent.children;
-		if (children.size == 1) return false;
+		if (children.size == 1) return;
 		index = Math.min(index, children.size - 1);
-		if (children.get(index) == this) return false;
-		if (!children.removeValue(this, true)) return false;
+		if (children.get(index) == this) return;
+		if (!children.removeValue(this, true)) return;
 		children.insert(index, this);
-		return true;
 	}
 
 	/** Returns the z-index of this actor.
@@ -876,11 +891,11 @@ public class Actor {
 	/** Converts coordinates for this actor to those of a parent actor. The ascendant does not need to be a direct parent. */
 	public Vector2 localToAscendantCoordinates (Actor ascendant, Vector2 localCoords) {
 		Actor actor = this;
-		do {
+		while (actor != null) {
 			actor.localToParentCoordinates(localCoords);
 			actor = actor.parent;
 			if (actor == ascendant) break;
-		} while (actor != null);
+		}
 		return localCoords;
 	}
 
@@ -927,5 +942,22 @@ public class Actor {
 			if (dotIndex != -1) name = name.substring(dotIndex + 1);
 		}
 		return name;
+	}
+
+	private void notifyHierarchyReachable(boolean reachable) {
+		final HierarchyReachableEvent event = Pools.obtain(HierarchyReachableEvent.class);
+		try {
+			event.setReachable(reachable);
+			event.setTarget(this);
+			notify(event, false);
+		} finally {
+			Pools.free(event);
+		}
+		if (this instanceof Group) {
+			for (Actor actor : ((Group) this).getChildren()) {
+				actor.notifyHierarchyReachable(reachable);
+			}
+		}
+
 	}
 }

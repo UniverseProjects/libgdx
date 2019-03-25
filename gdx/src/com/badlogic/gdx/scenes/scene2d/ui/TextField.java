@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright 2011 See AUTHORS file.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -139,6 +139,17 @@ public class TextField extends Widget implements Disableable {
 
 	protected void initialize () {
 		addListener(inputListener = createInputListener());
+		addListener(new FocusListener() {
+			public void keyboardFocusChanged (FocusEvent event, Actor actor, boolean focused) {
+				blinkTask.cancel();
+				cursorOn = focused;
+				if (focused)
+					Timer.schedule(blinkTask, blinkTime, blinkTime);
+				else
+					keyRepeatTask.cancel();
+				TextField.this.focused = focused;
+			}
+		});
 	}
 
 	protected InputListener createInputListener () {
@@ -293,18 +304,7 @@ public class TextField extends Widget implements Disableable {
 			: ((focused && style.focusedBackground != null) ? style.focusedBackground : style.background);
 	}
 
-	public void draw (Batch batch, float parentAlpha) {
-		boolean focused = getStage() != null && getStage().getKeyboardFocus() == this;
-		if (focused != this.focused) {
-			this.focused = focused;
-			blinkTask.cancel();
-			cursorOn = focused;
-			if (focused)
-				Timer.schedule(blinkTask, blinkTime, blinkTime);
-			else
-				keyRepeatTask.cancel();
-		}
-
+	public void draw (Batch batch, float a) {
 		final BitmapFont font = style.font;
 		final Color fontColor = (disabled && style.disabledFontColor != null) ? style.disabledFontColor
 			: ((focused && style.focusedFontColor != null) ? style.focusedFontColor : style.fontColor);
@@ -318,7 +318,7 @@ public class TextField extends Widget implements Disableable {
 		float width = getWidth();
 		float height = getHeight();
 
-		batch.setColor(color.r, color.g, color.b, color.a * parentAlpha);
+		batch.setColor(color.r, color.g, color.b, color.a * a);
 		float bgLeftWidth = 0, bgRightWidth = 0;
 		if (background != null) {
 			background.draw(batch, x, y, width, height);
@@ -338,15 +338,15 @@ public class TextField extends Widget implements Disableable {
 			if (!focused && messageText != null) {
 				if (style.messageFontColor != null) {
 					font.setColor(style.messageFontColor.r, style.messageFontColor.g, style.messageFontColor.b,
-						style.messageFontColor.a * color.a * parentAlpha);
+						style.messageFontColor.a * color.a * a);
 				} else
-					font.setColor(0.7f, 0.7f, 0.7f, color.a * parentAlpha);
+					font.setColor(0.7f, 0.7f, 0.7f, color.a * a);
 				BitmapFont messageFont = style.messageFont != null ? style.messageFont : font;
 				messageFont.draw(batch, messageText, x + bgLeftWidth, y + textY + yOffset, 0, messageText.length(),
 					width - bgLeftWidth - bgRightWidth, textHAlign, false, "...");
 			}
 		} else {
-			font.setColor(fontColor.r, fontColor.g, fontColor.b, fontColor.a * color.a * parentAlpha);
+			font.setColor(fontColor.r, fontColor.g, fontColor.b, fontColor.a * color.a * a);
 			drawText(batch, font, x + bgLeftWidth, y + textY + yOffset);
 		}
 		if (!disabled && cursorOn && cursorPatch != null) {
@@ -526,13 +526,13 @@ public class TextField extends Widget implements Disableable {
 
 	/** @return May be null. */
 	private TextField findNextTextField (Array<Actor> actors, TextField best, Vector2 bestCoords, Vector2 currentCoords,
-		boolean up) {
+										 boolean up) {
 		for (int i = 0, n = actors.size; i < n; i++) {
 			Actor actor = actors.get(i);
 			if (actor instanceof TextField) {
 				if (actor == this) continue;
 				TextField textField = (TextField)actor;
-				if (textField.isDisabled() || !textField.focusTraversal || !textField.ancestorsVisible()) continue;
+				if (textField.isDisabled() || !textField.focusTraversal || !textField.isHierarchyVisible()) continue;
 				Vector2 actorCoords = actor.getParent().localToStageCoordinates(tmp3.set(actor.getX(), actor.getY()));
 				boolean below = actorCoords.y != currentCoords.y && (actorCoords.y < currentCoords.y ^ up);
 				boolean right = actorCoords.y == currentCoords.y && (actorCoords.x > currentCoords.x ^ up);
@@ -874,39 +874,39 @@ public class TextField extends Widget implements Disableable {
 
 			if (ctrl) {
 				switch (keycode) {
-				case Keys.V:
-					paste(clipboard.getContents(), true);
-					repeat = true;
-					break;
-				case Keys.C:
-				case Keys.INSERT:
-					copy();
-					return true;
-				case Keys.X:
-					cut(true);
-					return true;
-				case Keys.A:
-					selectAll();
-					return true;
-				case Keys.Z:
-					String oldText = text;
-					setText(undoText);
-					undoText = oldText;
-					updateDisplayText();
-					return true;
-				default:
-					handled = false;
+					case Keys.V:
+						paste(clipboard.getContents(), true);
+						repeat = true;
+						break;
+					case Keys.C:
+					case Keys.INSERT:
+						copy();
+						return true;
+					case Keys.X:
+						cut(true);
+						return true;
+					case Keys.A:
+						selectAll();
+						return true;
+					case Keys.Z:
+						String oldText = text;
+						setText(undoText);
+						undoText = oldText;
+						updateDisplayText();
+						return true;
+					default:
+						handled = false;
 				}
 			}
 
 			if (UIUtils.shift()) {
 				switch (keycode) {
-				case Keys.INSERT:
-					paste(clipboard.getContents(), true);
-					break;
-				case Keys.FORWARD_DEL:
-					cut(true);
-					break;
+					case Keys.INSERT:
+						paste(clipboard.getContents(), true);
+						break;
+					case Keys.FORWARD_DEL:
+						cut(true);
+						break;
 				}
 
 				selection:
@@ -915,24 +915,24 @@ public class TextField extends Widget implements Disableable {
 					keys:
 					{
 						switch (keycode) {
-						case Keys.LEFT:
-							moveCursor(false, jump);
-							repeat = true;
-							handled = true;
-							break keys;
-						case Keys.RIGHT:
-							moveCursor(true, jump);
-							repeat = true;
-							handled = true;
-							break keys;
-						case Keys.HOME:
-							goHome(jump);
-							handled = true;
-							break keys;
-						case Keys.END:
-							goEnd(jump);
-							handled = true;
-							break keys;
+							case Keys.LEFT:
+								moveCursor(false, jump);
+								repeat = true;
+								handled = true;
+								break keys;
+							case Keys.RIGHT:
+								moveCursor(true, jump);
+								repeat = true;
+								handled = true;
+								break keys;
+							case Keys.HOME:
+								goHome(jump);
+								handled = true;
+								break keys;
+							case Keys.END:
+								goEnd(jump);
+								handled = true;
+								break keys;
 						}
 						break selection;
 					}
@@ -944,28 +944,28 @@ public class TextField extends Widget implements Disableable {
 			} else {
 				// Cursor movement or other keys (kills selection).
 				switch (keycode) {
-				case Keys.LEFT:
-					moveCursor(false, jump);
-					clearSelection();
-					repeat = true;
-					handled = true;
-					break;
-				case Keys.RIGHT:
-					moveCursor(true, jump);
-					clearSelection();
-					repeat = true;
-					handled = true;
-					break;
-				case Keys.HOME:
-					goHome(jump);
-					clearSelection();
-					handled = true;
-					break;
-				case Keys.END:
-					goEnd(jump);
-					clearSelection();
-					handled = true;
-					break;
+					case Keys.LEFT:
+						moveCursor(false, jump);
+						clearSelection();
+						repeat = true;
+						handled = true;
+						break;
+					case Keys.RIGHT:
+						moveCursor(true, jump);
+						clearSelection();
+						repeat = true;
+						handled = true;
+						break;
+					case Keys.HOME:
+						goHome(jump);
+						clearSelection();
+						handled = true;
+						break;
+					case Keys.END:
+						goEnd(jump);
+						clearSelection();
+						handled = true;
+						break;
 				}
 			}
 
@@ -994,13 +994,13 @@ public class TextField extends Widget implements Disableable {
 
 			// Disallow "typing" most ASCII control characters, which would show up as a space when onlyFontChars is true.
 			switch (character) {
-			case BACKSPACE:
-			case TAB:
-			case ENTER_ANDROID:
-			case ENTER_DESKTOP:
-				break;
-			default:
-				if (character < 32) return false;
+				case BACKSPACE:
+				case TAB:
+				case ENTER_ANDROID:
+				case ENTER_DESKTOP:
+					break;
+				default:
+					if (character < 32) return false;
 			}
 
 			Stage stage = getStage();
