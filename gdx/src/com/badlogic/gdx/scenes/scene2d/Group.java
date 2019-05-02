@@ -77,8 +77,11 @@ public class Group extends Actor implements Cullable {
 				for (int i = 0, n = children.size; i < n; i++) {
 					Actor child = actors[i];
 					if (!child.isVisible()) continue;
-					float cx = child.x, cy = child.y;
-					if (cx <= cullRight && cy <= cullTop && cx + child.width >= cullLeft && cy + child.height >= cullBottom)
+					float ax = child.x - child.originX * child.scaleX,
+                            ay = child.y - child.originY * child.originY,
+                            ah = (child.height - child.originY) * child.scaleY,
+                            aw = (child.width - child.originX) * child.scaleX;
+					if (ax <= cullRight && ay <= cullTop && ax + aw >= cullLeft && ay + ah >= cullBottom)
 						child.draw(batch, parentAlpha);
 				}
 			} else {
@@ -90,7 +93,11 @@ public class Group extends Actor implements Cullable {
 					Actor child = actors[i];
 					if (!child.isVisible()) continue;
 					float cx = child.x, cy = child.y;
-					if (cx <= cullRight && cy <= cullTop && cx + child.width >= cullLeft && cy + child.height >= cullBottom) {
+                    float ax = child.x - child.originX * child.scaleX,
+                            ay = child.y - child.originY * child.originY,
+                            ah = (child.height - child.originY) * child.scaleY,
+                            aw = (child.width - child.originX) * child.scaleX;
+					if (ax <= cullRight && ay <= cullTop && ax + aw >= cullLeft && ay + ah >= cullBottom) {
 						child.x = cx + offsetX;
 						child.y = cy + offsetY;
 						child.draw(batch, parentAlpha);
