@@ -77,9 +77,15 @@ public class Group extends Actor implements Cullable {
 				for (int i = 0, n = children.size; i < n; i++) {
 					Actor child = actors[i];
 					if (!child.isVisible()) continue;
-					float cx = child.x, cy = child.y;
-					if (cx <= cullRight && cy <= cullTop && cx + child.width >= cullLeft && cy + child.height >= cullBottom)
-						child.draw(batch, parentAlpha);
+					
+                    if (child.x - child.originX * child.scaleX > cullRight     // Safe to underestimate
+                            || child.x + child.width * child.scaleX < cullLeft     // Safe to overestimate
+                            || child.y - child.originY * child.scaleY > cullTop    // Safe to underestimate
+                            || child.y + child.height * child.scaleY < cullBottom  // Safe to overestimate
+                    )
+                        continue;
+                    
+                    child.draw(batch, parentAlpha);
 				}
 			} else {
 				// No transform for this group, offset each child.
@@ -90,13 +96,19 @@ public class Group extends Actor implements Cullable {
 					Actor child = actors[i];
 					if (!child.isVisible()) continue;
 					float cx = child.x, cy = child.y;
-					if (cx <= cullRight && cy <= cullTop && cx + child.width >= cullLeft && cy + child.height >= cullBottom) {
-						child.x = cx + offsetX;
-						child.y = cy + offsetY;
-						child.draw(batch, parentAlpha);
-						child.x = cx;
-						child.y = cy;
-					}
+
+                    if (cx - child.originX * child.scaleX > cullRight     // Safe to underestimate
+                            || cx + child.width * child.scaleX < cullLeft     // Safe to overestimate
+                            || cy - child.originY * child.scaleY > cullTop    // Safe to underestimate
+                            || cy + child.height * child.scaleY < cullBottom  // Safe to overestimate
+                    )
+                        continue;
+
+                    child.x = cx + offsetX;
+                    child.y = cy + offsetY;
+                    child.draw(batch, parentAlpha);
+                    child.x = cx;
+                    child.y = cy;
 				}
 				x = offsetX;
 				y = offsetY;
