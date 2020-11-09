@@ -422,6 +422,11 @@ public class RemoteInput implements Runnable, Input {
 	}
 
 	@Override
+	public boolean isButtonJustPressed(int button) {
+		return button == Buttons.LEFT && justTouched;
+	}
+
+	@Override
 	public boolean isKeyPressed (int key) {
 		if (key == Input.Keys.ANY_KEY) {
 			return keyCount > 0;
@@ -449,7 +454,16 @@ public class RemoteInput implements Runnable, Input {
 	}
 
 	@Override
+	public void getTextInput(TextInputListener listener, String title, String text, String hint, OnscreenKeyboardType type) {
+		Gdx.app.getInput().getTextInput(listener, title, text, hint, type);
+	}
+
+	@Override
 	public void setOnscreenKeyboardVisible (boolean visible) {
+	}
+
+	@Override
+	public void setOnscreenKeyboardVisible(boolean visible, OnscreenKeyboardType type) {
 	}
 
 	@Override
@@ -502,6 +516,15 @@ public class RemoteInput implements Runnable, Input {
 		return false;
 	}
 
+	@Override
+	public void setCatchKey (int keycode, boolean catchKey) {
+
+	}
+
+	@Override
+	public boolean isCatchKey (int keycode) {
+		return false;
+	}
 
 	@Override
 	public void setInputProcessor (InputProcessor processor) {

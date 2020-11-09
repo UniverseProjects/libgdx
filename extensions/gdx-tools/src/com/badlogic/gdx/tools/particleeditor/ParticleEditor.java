@@ -120,6 +120,7 @@ public class ParticleEditor extends JFrame {
 				renderGridCheckBox = new JCheckBox("Render Grid", previousSelected);
 				gridPanel.add(renderGridCheckBox, new GridBagConstraints());
 				addEditorRow(gridPanel);
+				addEditorRow(new CustomShadingPanel(ParticleEditor.this, "Shading", "Custom shader and multi-texture preview."));
 
 				rowsPanel.removeAll();
 				ParticleEmitter emitter = getEmitter();
@@ -299,9 +300,12 @@ public class ParticleEditor extends JFrame {
 
 		public Sprite bgImage; // BOZO - Add setting background image to UI.
 
+		public CustomShading customShading;
+
 		public void create () {
 			if (spriteBatch != null) return;
 
+			customShading = new CustomShading();
 			spriteBatch = new SpriteBatch();
 			shapeRenderer = new ShapeRenderer();
 			lineColor = com.badlogic.gdx.graphics.Color.valueOf("636363");
@@ -346,11 +350,11 @@ public class ParticleEditor extends JFrame {
 			}
 
 			@Override
-			public boolean scrolled (int amount) {
-				worldCamera.zoom += amount * 0.01f;
+			public boolean scrolled (float amountX, float amountY) {
+				worldCamera.zoom += amountY * 0.01f;
 				worldCamera.zoom = MathUtils.clamp(worldCamera.zoom, 0.01f, 5000);
 				worldCamera.update();
-				return super.scrolled(amount);
+				return super.scrolled(amountX, amountY);
 			}
 
 			@Override
@@ -460,6 +464,7 @@ public class ParticleEditor extends JFrame {
 
 			activeCount = 0;
 			boolean complete = true;
+			customShading.begin(spriteBatch);
 			for (ParticleEmitter emitter : effect.getEmitters()) {
 				if (emitter.getSprites().size == 0 && emitter.getImagePaths().size > 0) loadImages(emitter);
 				boolean enabled = isEnabled(emitter);
@@ -469,6 +474,7 @@ public class ParticleEditor extends JFrame {
 					if (!emitter.isComplete()) complete = false;
 				}
 			}
+			customShading.end(spriteBatch);
 			if (complete) effect.start();
 
 			maxActive = Math.max(maxActive, activeCount);
@@ -593,7 +599,7 @@ public class ParticleEditor extends JFrame {
 		}
 
 		@Override
-		public boolean scrolled (int amount) {
+		public boolean scrolled (float amountX, float amountY) {
 			return false;
 		}
 
