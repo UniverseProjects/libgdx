@@ -58,7 +58,7 @@ allprojects {
         publications {
             mavenJava(MavenPublication) {
                 groupId 'com.universeprojects'
-                artifactId project.name
+                artifactId project.name.replaceAll("gdx-backends-gwt", "gdx-backend-gwt")
 
                 from components.java
                 artifact sourceJar
