@@ -64,6 +64,13 @@ public class GwtGraphics implements Graphics {
 	int frames;
 	GwtApplicationConfiguration config;
 
+	int ppiX = 96;
+	int ppiY = 96;
+	float ppcX = 96 / 2.54f;
+	float ppcY = 96 / 2.54f;
+
+	float density = 96.0f / 160;;
+
 	public GwtGraphics (Panel root, GwtApplicationConfiguration config) {
 		Canvas canvasWidget = Canvas.createIfSupported();
 		if (canvasWidget == null) throw new GdxRuntimeException("Canvas not supported");
@@ -88,6 +95,14 @@ public class GwtGraphics implements Graphics {
 		String vendorString = gl.glGetString(GL20.GL_VENDOR);
 		String rendererString = gl.glGetString(GL20.GL_RENDERER);
 		glVersion = new GLVersion(Application.ApplicationType.WebGL, versionString, vendorString, rendererString);
+	}
+
+	public void configureDensity(int ppiX, int ppiY, float ppcX, float ppcY, float density) {
+		this.ppiX = ppiX;
+		this.ppiY = ppiY;
+		this.ppcX = ppcX;
+		this.ppcY = ppcY;
+		this.density = density;
 	}
 
 	public WebGLRenderingContext getContext () {
@@ -169,22 +184,22 @@ public class GwtGraphics implements Graphics {
 
 	@Override
 	public float getPpiX () {
-		return 96;
+		return ppiX;
 	}
 
 	@Override
 	public float getPpiY () {
-		return 96;
+		return ppiY;
 	}
 
 	@Override
 	public float getPpcX () {
-		return 96 / 2.54f;
+		return ppcX;
 	}
 
 	@Override
 	public float getPpcY () {
-		return 96 / 2.54f;
+		return ppcY;
 	}
 
 	@Override
@@ -470,7 +485,7 @@ public class GwtGraphics implements Graphics {
 
 	@Override
 	public float getDensity () {
-		return 96.0f / 160;
+		return density;
 	}
 
 	@Override
