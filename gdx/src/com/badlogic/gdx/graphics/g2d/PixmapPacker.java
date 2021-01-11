@@ -168,11 +168,9 @@ public class PixmapPacker implements Disposable {
 		if (name != null && getRect(name) != null)
 			throw new GdxRuntimeException("Pixmap has already been packed with name: " + name);
 
-		boolean isPatch = name != null && name.endsWith(".9");
-
 		PixmapPackerRectangle rect;
 		Pixmap pixmapToDispose = null;
-		if (isPatch) {
+		if (name != null && name.endsWith(".9")) {
 			rect = new PixmapPackerRectangle(0, 0, image.getWidth() - 2, image.getHeight() - 2);
 			pixmapToDispose = new Pixmap(image.getWidth() - 2, image.getHeight() - 2, image.getFormat());
 			pixmapToDispose.setBlending(Blending.None);
@@ -367,8 +365,8 @@ public class PixmapPacker implements Disposable {
 					TextureAtlas.AtlasRegion region = new TextureAtlas.AtlasRegion(page.texture, (int)rect.x, (int)rect.y, (int)rect.width, (int)rect.height);
 
 					if (rect.splits != null) {
-						region.splits = rect.splits;
-						region.pads = rect.pads;
+						region.names = new String[] {"split", "pad"};
+						region.values = new int[][] {rect.splits, rect.pads};
 					}
 
 					int imageIndex = -1;

@@ -22,13 +22,14 @@ import android.content.Context;
 import android.graphics.PixelFormat;
 import android.opengl.GLSurfaceView;
 import android.os.SystemClock;
-import android.text.InputType;
 import android.util.Log;
 import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
 import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
+import com.badlogic.gdx.Input.OnscreenKeyboardType;
+import com.badlogic.gdx.backends.android.DefaultAndroidInput;
 
 /** A simple GLSurfaceView sub-class that demonstrates how to perform OpenGL ES 2.0 rendering into a GL Surface. Note the following
  * important details:
@@ -47,6 +48,7 @@ public class GLSurfaceView20 extends GLSurfaceView {
 
 	final ResolutionStrategy resolutionStrategy;
 	static int targetGLESVersion;
+	public OnscreenKeyboardType onscreenKeyboardType = OnscreenKeyboardType.Default;
 
 	public GLSurfaceView20 (Context context, ResolutionStrategy resolutionStrategy, int targetGLESVersion) {
 		super(context);
@@ -78,7 +80,7 @@ public class GLSurfaceView20 extends GLSurfaceView {
 		// add this line, the IME can show the selectable words when use chinese input method editor.
 		if (outAttrs != null) {
 			outAttrs.imeOptions = outAttrs.imeOptions | EditorInfo.IME_FLAG_NO_EXTRACT_UI;
-			outAttrs.inputType = InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD | InputType.TYPE_NULL;
+			outAttrs.inputType = DefaultAndroidInput.getAndroidInputType(onscreenKeyboardType);
 		}
 
 		BaseInputConnection connection = new BaseInputConnection(this, false) {
@@ -110,10 +112,15 @@ public class GLSurfaceView20 extends GLSurfaceView {
 		return connection;
 	}
 
+	@Override
+	public void onDetachedFromWindow() {
+		super.onDetachedFromWindow();
+	}
+
 	private void init (boolean translucent, int depth, int stencil) {
 
 		/*
-		 * By default, GLSurfaceView() creates a RGB_565 opaque surface. If we want a translucent one, we should change the
+		 * By default, GLSurfaceView() creates a RGB_888 opaque surface. If we want a translucent one, we should change the
 		 * surface's format here, using PixelFormat.TRANSLUCENT for GL Surfaces is interpreted as any 32-bit surface with alpha by
 		 * SurfaceFlinger.
 		 */
@@ -130,7 +137,7 @@ public class GLSurfaceView20 extends GLSurfaceView {
 		 * We need to choose an EGLConfig that matches the format of our surface exactly. This is going to be done in our custom
 		 * config chooser. See ConfigChooser class definition below.
 		 */
-		setEGLConfigChooser(translucent ? new ConfigChooser(8, 8, 8, 8, depth, stencil) : new ConfigChooser(5, 6, 5, 0, depth,
+		setEGLConfigChooser(translucent ? new ConfigChooser(8, 8, 8, 8, depth, stencil) : new ConfigChooser(8, 8, 8, 0, depth,
 			stencil));
 
 		/* Set the renderer responsible for frame rendering */
