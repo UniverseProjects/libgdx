@@ -37,7 +37,7 @@ import com.google.gwt.dom.client.ImageElement;
 
 public class Preloader {
 
-	private final AssetDownloader loader = new AssetDownloader();
+	protected final AssetDownloader loader = new AssetDownloader();
 
 	public interface PreloaderCallback {
 		
@@ -52,7 +52,7 @@ public class Preloader {
 	public ObjectMap<String, Blob> audio = new ObjectMap<String, Blob>();
 	public ObjectMap<String, String> texts = new ObjectMap<String, String>();
 	public ObjectMap<String, Blob> binaries = new ObjectMap<String, Blob>();
-	private ObjectMap<String, Asset> stillToFetchAssets = new ObjectMap<String, Asset>();
+	protected ObjectMap<String, Asset> stillToFetchAssets = new ObjectMap<String, Asset>();
 	public ObjectMap<String, String> assetNames = new ObjectMap<String, String>();
 
 	public static class Asset {
@@ -177,26 +177,30 @@ public class Preloader {
 					}
 
 					asset.downloadStarted = true;
-					loader.load(baseUrl + asset.url, asset.type, asset.mimeType, new AssetLoaderListener<Object>() {
-						@Override
-						public void onProgress (double amount) {
-							asset.loaded = (long) amount;
-							callback.update(state);
-						}
-						@Override
-						public void onFailure () {
-							asset.failed = true;
-							callback.error(asset.file);
-							callback.update(state);
-						}
-						@Override
-						public void onSuccess (Object result) {
-							putAssetInMap(result, asset);
-							asset.succeed = true;
-							callback.update(state);
-						}
-					});
+					downloadAsset(state, asset, callback);
 				}
+				callback.update(state);
+			}
+		});
+	}
+
+	protected void downloadAsset(final PreloaderState state, final Asset asset, final PreloaderCallback callback) {
+		loader.load(baseUrl + asset.url, asset.type, asset.mimeType, new AssetLoaderListener<Object>() {
+			@Override
+			public void onProgress (double amount) {
+				asset.loaded = (long) amount;
+				callback.update(state);
+			}
+			@Override
+			public void onFailure () {
+				asset.failed = true;
+				callback.error(asset.file);
+				callback.update(state);
+			}
+			@Override
+			public void onSuccess (Object result) {
+				putAssetInMap(result, asset);
+				asset.succeed = true;
 				callback.update(state);
 			}
 		});
