@@ -177,33 +177,33 @@ public class Preloader {
 					}
 
 					asset.downloadStarted = true;
-					downloadAsset(state, asset, callback);
+					loader.load(toFullURL(asset), asset.type, asset.mimeType, new AssetLoaderListener<Object>() {
+						@Override
+						public void onProgress (double amount) {
+							asset.loaded = (long) amount;
+							callback.update(state);
+						}
+						@Override
+						public void onFailure () {
+							asset.failed = true;
+							callback.error(asset.file);
+							callback.update(state);
+						}
+						@Override
+						public void onSuccess (Object result) {
+							putAssetInMap(result, asset);
+							asset.succeed = true;
+							callback.update(state);
+						}
+					});
 				}
 				callback.update(state);
 			}
 		});
 	}
 
-	protected void downloadAsset(final PreloaderState state, final Asset asset, final PreloaderCallback callback) {
-		loader.load(baseUrl + asset.url, asset.type, asset.mimeType, new AssetLoaderListener<Object>() {
-			@Override
-			public void onProgress (double amount) {
-				asset.loaded = (long) amount;
-				callback.update(state);
-			}
-			@Override
-			public void onFailure () {
-				asset.failed = true;
-				callback.error(asset.file);
-				callback.update(state);
-			}
-			@Override
-			public void onSuccess (Object result) {
-				putAssetInMap(result, asset);
-				asset.succeed = true;
-				callback.update(state);
-			}
-		});
+	protected String toFullURL(Asset asset) {
+		return baseUrl + asset.url;
 	}
 
 	public void preloadSingleFile(final String file) {
@@ -219,7 +219,7 @@ public class Preloader {
 
 		asset.downloadStarted = true;
 
-		loader.load(baseUrl + asset.url, asset.type, asset.mimeType, new AssetLoaderListener<Object>() {
+		loader.load(toFullURL(asset), asset.type, asset.mimeType, new AssetLoaderListener<Object>() {
 			@Override
 			public void onProgress (double amount) {
 				asset.loaded = (long) amount;
