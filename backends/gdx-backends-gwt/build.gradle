@@ -24,3 +24,6 @@ configurations.all {
 }
 
 sourceSets.main.java.exclude "**/System.java"
+sourceSets.main.resources.srcDir 'src'
+sourceSets.main.resources.exclude "com/badlogic/gdx/backends/gwt/emu"
+sourceSets.main.resources.exclude "**.java"
