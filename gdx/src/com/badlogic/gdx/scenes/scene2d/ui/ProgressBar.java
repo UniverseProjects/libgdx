@@ -206,9 +206,9 @@ public class ProgressBar extends Widget implements Disableable {
 			if (knobBefore != null) {
 				if (round) {
 					knobBefore.draw(batch, Math.round(x + bgLeftWidth), Math.round(y + (height - knobBefore.getMinHeight()) * 0.5f),
-						Math.round(position + knobWidthHalf), Math.round(knobBefore.getMinHeight()));
+						Math.round(position - bgLeftWidth + knobWidthHalf), Math.round(knobBefore.getMinHeight()));
 				} else {
-					knobBefore.draw(batch, x + bgLeftWidth, y + (height - knobBefore.getMinHeight()) * 0.5f, position + knobWidthHalf,
+					knobBefore.draw(batch, x + bgLeftWidth, y + (height - knobBefore.getMinHeight()) * 0.5f, position - bgLeftWidth + knobWidthHalf,
 						knobBefore.getMinHeight());
 				}
 			}
